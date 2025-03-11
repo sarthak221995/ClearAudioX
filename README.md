@@ -109,10 +109,6 @@ MIT License - Feel free to use and modify as needed.
 - More noise reduction algorithms
 - Support for other video platforms
 
-## Credits
-Developed by [Your Name/Organization]
-Icon design by [Designer Name/Source]
-
 ## Support
 For issues or feature requests, please use the GitHub issues page or contact [contact information].
 
