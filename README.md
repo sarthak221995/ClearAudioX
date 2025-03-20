@@ -1,47 +1,78 @@
-# ClearAudioX - YouTube Audio Enhancement Extension
+# YouTube Audio & Caption Enhancer
 
-## Overview
-ClearAudioX is a Chrome extension that enhances your YouTube viewing experience by providing advanced audio controls directly in the YouTube player interface. It offers features like volume boosting and noise reduction, making it perfect for quiet videos, lectures, or content with audio quality issues.
+A Chrome extension that enhances the YouTube viewing experience with advanced audio controls and intelligent subtitle extraction and summarization.
 
 ## Features
-- **2X Sound Boost**: Amplify video volume beyond YouTube's maximum limit
-- **Noise Reduction (NR)**: Reduce background noise and enhance voice clarity
-- **Seamless Integration**: Controls appear directly in the YouTube player
-- **Easy Toggle**: Simple one-click activation/deactivation of features
-- **Native Look**: Matches YouTube's design for a consistent experience
+
+### Audio Enhancement
+- **Volume Boost**: Amplify audio volume beyond YouTube's maximum level
+- **Noise Reduction**: Reduce background noise in videos with poor audio quality
+- **Equalizer**: Adjust bass, mid, and treble frequencies
+- **Dynamic Compression**: Improve audio clarity by balancing loud and quiet parts
+- **Quick Controls**: Easy-to-use buttons directly on the YouTube player
+
+### Subtitle Extraction and Summarization
+- **Extract Subtitles**: Capture YouTube video subtitles with accurate timestamps
+- **Smart Summarization**: Generate comprehensive lecture notes using the Gemini Flash AI
+- **Download Options**: Save extracted subtitles and summaries for offline reference
 
 ## Installation
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" in the top right corner
-4. Click "Load unpacked" and select the extension directory
 
-## Usage
+1. Download or clone this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top-right corner
+4. Click "Load unpacked" and select the folder containing the extension files
+5. The extension is now installed and ready to use on YouTube
+
+## How to Use
+
+### Audio Enhancement
 1. Navigate to any YouTube video
-2. Look for two new buttons next to the volume control:
-   - `2X`: Toggle sound boost
-   - `NR`: Toggle noise reduction
-3. Click to activate/deactivate:
-   - Grey = Feature inactive
-   - White = Feature active
+2. Use the 2X and NR buttons on the YouTube player for quick volume boost and noise reduction
+3. Click the extension icon to open the popup for more detailed audio controls
+4. Adjust sliders for volume boost, noise reduction, equalization, and compression
+5. Settings are automatically applied and saved for future sessions
+
+### Subtitle Extraction and Summarization
+1. Navigate to a YouTube video that has subtitles/captions available
+2. Click the extension icon to open the popup
+3. Switch to the "Subtitle Extractor" tab
+4. Enter your Gemini API key (required only once)
+5. Click "Extract Subtitles" to fetch the video's subtitles
+6. Click "Summarize Content" to generate a concise summary with key points
+7. Use the "Download" button to save the results as a text file
+
+## Getting a Gemini API Key
+
+To use the summarization feature, you'll need a Gemini API key:
+
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Create a new API key
+4. Copy the key and paste it into the extension's API key field
+5. Click "Save" to store the key securely
 
 ## Technical Details
-- Uses Web Audio API for audio processing
-- Implements advanced noise reduction chain:
-  - High-pass filter (removes low-frequency noise)
-  - Low-pass filter (reduces high-frequency hiss)
-  - Dynamic range compression
-  - Voice frequency enhancement
 
-## Files
-- `manifest.json`: Extension configuration
-- `content.js`: Main functionality
-- `popup.html`: Extension popup (minimal)
-- `icons/`: Extension icons
+- The extension uses the Web Audio API for advanced audio processing
+- YouTube subtitle extraction works with both automatic and manual captions
+- Summarization powered by Google's Gemini 2.0 Flash API (free tier)
+- Optimized to use minimal API calls even for longer videos
+- All processing happens in real-time within the browser
 
-## Requirements
-- Google Chrome Browser
-- YouTube access
+## Privacy & Security
+
+- Your Gemini API key is stored securely in Chrome's sync storage
+- No audio or subtitle data is sent to any servers other than Google's Gemini API
+- The extension requires minimal permissions to function
+
+## Support & Feedback
+
+If you encounter any issues or have suggestions for improvement, please open an issue on the GitHub repository.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Known Limitations
 - Works only on YouTube website
@@ -58,13 +89,6 @@ ClearAudioX is a Chrome extension that enhances your YouTube viewing experience 
    - Click video to ensure it's focused
    - Refresh the page
    - Check browser console for errors
-
-## Privacy
-This extension:
-- Does not collect any user data
-- Does not modify video content
-- Only processes audio locally
-- Requires no external services
 
 ## Development
 ### Setup
@@ -92,9 +116,6 @@ ClearAudioX/
 3. Commit changes
 4. Push to the branch
 5. Create a Pull Request
-
-## License
-MIT License - Feel free to use and modify as needed.
 
 ## Version History
 - 1.0.0: Initial release

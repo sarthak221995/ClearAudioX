@@ -1,5 +1,6 @@
+/* Popup Styles - Applied only in the extension popup */
 body {
-  width: 300px;
+  width: 400px;
   padding: 15px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
@@ -13,6 +14,39 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Tab system */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #5f6368;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  color: #1a73e8;
+  border-bottom-color: #1a73e8;
+  font-weight: 500;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Rest of popup styles */
 h2 {
   margin: 0 0 20px 0;
   color: #1a73e8;
@@ -61,7 +95,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: #1557b0;
 }
 
-span {
+input[type="password"], input[type="text"] {
+  width: calc(100% - 70px);
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.container span {
   display: block;
   text-align: right;
   color: #5f6368;
@@ -83,8 +125,7 @@ span {
   font-size: 12px;
 }
 
-#reset-button {
-  width: 100%;
+#reset-button, .action-button, #download-results, #save-api-key {
   padding: 8px;
   background-color: #1a73e8;
   color: white;
@@ -95,6 +136,250 @@ span {
   transition: background-color 0.15s ease;
 }
 
-#reset-button:hover {
+#reset-button:hover, .action-button:hover, #download-results:hover, #save-api-key:hover {
   background-color: #1557b0;
+}
+
+#reset-button {
+  width: 100%;
+}
+
+.action-button {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.action-button:disabled, #download-results:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Subtitle extraction specific styles */
+.subtitle-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.api-key-section {
+  margin-bottom: 15px;
+}
+
+.api-key-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.api-status {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.api-status.success {
+  color: #0f9d58;
+}
+
+.api-status.error {
+  color: #d93025;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-container {
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.result-header h3 {
+  margin: 0;
+}
+
+#download-results {
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
+#results-area {
+  overflow-y: auto;
+  flex-grow: 1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.no-results {
+  color: #5f6368;
+  text-align: center;
+  font-style: italic;
+}
+
+.subtitle-entry {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.subtitle-time {
+  color: #5f6368;
+  font-size: 12px;
+}
+
+.speaker-lecturer {
+  color: #1a73e8;
+  font-weight: 500;
+}
+
+.speaker-student {
+  color: #0f9d58;
+  font-weight: 500;
+}
+
+.summary-section {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+
+.summary-section h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #1a73e8;
+}
+
+/* Loading Bar Styles */
+.loading-container {
+  margin: 15px 0;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 5px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #4CAF50;
+  transition: width 0.3s ease-in-out;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.cancel-button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.cancel-button:hover {
+  background: #cc0000;
+}
+
+/* YouTube page custom styles - Only apply to our specific elements */
+/* These styles will be injected into the YouTube page */
+.custom-buttons-wrapper {
+  display: inline-flex;
+  height: 100%;
+  align-items: center;
+}
+
+.custom-audio-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 13px;
+  font-family: Roboto, Arial, sans-serif;
+  font-weight: bold;
+  margin: 0 4px;
+}
+
+/* Markdown content styling */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content h2 {
+  font-size: 18px;
+  margin: 16px 0 8px;
+  color: #202124;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 5px;
+}
+
+.markdown-content h3 {
+  font-size: 16px;
+  margin: 14px 0 7px;
+  color: #202124;
+  text-align: left;
+}
+
+.markdown-content h4 {
+  font-size: 14px;
+  margin: 12px 0 6px;
+  color: #5f6368;
+  text-align: left;
+}
+
+.markdown-content ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.markdown-content li {
+  margin-bottom: 4px;
+}
+
+.markdown-content p {
+  margin: 8px 0;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+}
+
+.markdown-content em {
+  font-style: italic;
 } 

@@ -1,10 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>YouTube Audio Enhancer</title>
+  <title>YouTube Audio & Caption Enhancer</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Blank for now -->
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-button active" data-tab="audio">Audio Enhancer</button>
+      <button class="tab-button" data-tab="subtitle">Generate Class Notes</button>
+    </div>
+    
+    <div id="audio-tab" class="tab-content active">
+      <h2>Audio Enhancement</h2>
+      
+      <div class="control-group">
+        <label for="volume-boost">Volume Boost</label>
+        <input type="range" id="volume-boost" min="0" max="200" value="100">
+        <span id="volume-value">100%</span>
+      </div>
+      
+      <div class="control-group">
+        <label for="noise-reduction">Noise Reduction</label>
+        <input type="range" id="noise-reduction" min="0" max="100" value="0">
+        <span id="noise-value">0%</span>
+      </div>
+      
+      <h3>Equalizer</h3>
+      <div class="eq-controls">
+        <div class="eq-slider">
+          <label>Bass</label>
+          <input type="range" id="eq-bass" min="-10" max="10" value="0">
+          <span id="bass-value">0 dB</span>
+        </div>
+        <div class="eq-slider">
+          <label>Mid</label>
+          <input type="range" id="eq-mid" min="-10" max="10" value="0">
+          <span id="mid-value">0 dB</span>
+        </div>
+        <div class="eq-slider">
+          <label>Treble</label>
+          <input type="range" id="eq-treble" min="-10" max="10" value="0">
+          <span id="treble-value">0 dB</span>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label for="compression">Dynamic Compression</label>
+        <input type="range" id="compression" min="0" max="100" value="0">
+        <span id="compression-value">0%</span>
+      </div>
+      
+      <button id="reset-button">Reset All</button>
+    </div>
+    
+    <div id="subtitle-tab" class="tab-content">
+      <h2>Generate Class Notes</h2>
+      
+      <div class="subtitle-controls">
+        <div class="api-key-section">
+          <label for="gemini-api-key">Gemini API Key</label>
+          <div class="api-key-container">
+            <input type="password" id="gemini-api-key" placeholder="Enter your Gemini API Key">
+            <button id="save-api-key">Save</button>
+          </div>
+          <span class="api-status" id="api-status"></span>
+        </div>
+        
+        <div class="action-buttons">
+          <button id="generate-notes" class="action-button">Generate Notes</button>
+        </div>
+        
+        <div class="loading-container" style="display: none;">
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="progress-text">Processing: <span id="progress-percentage">0%</span></div>
+          <button id="cancel-summary" class="cancel-button">Cancel</button>
+        </div>
+        
+        <div class="result-container">
+          <div class="result-header">
+            <h3>Results</h3>
+            <button id="download-results" disabled>Download</button>
+          </div>
+          <div id="results-area">
+            <p class="no-results">Extract YouTube subtitles to see results here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
 </body>
 </html> 

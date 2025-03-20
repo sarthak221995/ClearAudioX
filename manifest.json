@@ -1,15 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Audio Enhancer",
+  "name": "YouTube Audio & Caption Enhancer",
   "version": "1.0",
-  "description": "Enhance YouTube audio with volume boost, noise reduction, and audio quality improvements",
+  "description": "Enhance YouTube audio with volume boost and generate comprehensive class notes from video subtitles",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/watch*",
+    "https://generativelanguage.googleapis.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -20,9 +25,16 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*"],
+      "matches": ["*://*.youtube.com/watch*"],
       "js": ["content.js"],
-      "css": ["styles.css"]
+      "css": ["content-styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content-styles.css"],
+      "matches": ["*://*.youtube.com/*"]
     }
   ],
   "icons": {
