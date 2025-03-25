@@ -9,6 +9,7 @@
     <div class="tabs">
       <button class="tab-button active" data-tab="audio">Audio Enhancer</button>
       <button class="tab-button" data-tab="subtitle">Generate Class Notes</button>
+      <button class="tab-button" data-tab="focus">Focus Mode</button>
     </div>
     
     <div id="audio-tab" class="tab-content active">
@@ -87,6 +88,77 @@
           <div id="results-area">
             <p class="no-results">Extract YouTube subtitles to see results here.</p>
           </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="focus-tab" class="tab-content">
+      <h2>Focus Mode</h2>
+      
+      <div class="focus-controls">
+        <div class="api-key-section">
+          <label for="focus-gemini-api-key">Gemini API Key</label>
+          <div class="api-key-container">
+            <input type="password" id="focus-gemini-api-key" placeholder="Enter your Gemini API Key">
+            <button id="focus-save-api-key">Save</button>
+          </div>
+          <span class="api-status" id="focus-api-status"></span>
+        </div>
+        
+        <div class="control-group">
+          <label for="focus-toggle">Enable Focus Mode</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="focus-toggle">
+            <span class="toggle-slider"></span>
+          </div>
+          <p class="focus-description">Skip less important parts of videos and focus on key content</p>
+        </div>
+        
+        <div class="control-group">
+          <label for="focus-sensitivity">Skip Sensitivity</label>
+          <input type="range" id="focus-sensitivity" min="1" max="5" value="3">
+          <div class="sensitivity-labels">
+            <span>Less</span>
+            <span>More</span>
+          </div>
+          <p class="sensitivity-description">Lower sensitivity skips fewer segments, higher skips more</p>
+        </div>
+        
+        <div class="action-group">
+          <button id="analyze-video" class="action-button">Analyze Current Video</button>
+          <div class="focus-status-container">
+            <span id="focus-status">Not analyzed</span>
+          </div>
+        </div>
+        
+        <!-- Add loading container for Focus Mode analysis -->
+        <div class="focus-loading-container" style="display: none;">
+          <div class="progress-bar">
+            <div class="focus-progress-fill"></div>
+          </div>
+          <div class="progress-text">Analyzing: <span id="focus-progress-percentage">0%</span></div>
+          <button id="cancel-focus-analysis" class="cancel-button">Cancel</button>
+        </div>
+        
+        <div class="timeline-preview">
+          <h4>Video Timeline</h4>
+          <div id="video-timeline" class="timeline-container">
+            <!-- Remove the timeline-bar div as it's not used in our new implementation -->
+          </div>
+          <div class="timeline-legend">
+            <div class="legend-item">
+              <div class="legend-color important"></div>
+              <span>Important Content</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color skippable"></div>
+              <span>Skippable Content</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="api-note">
+          <p>Note: Focus Mode uses Gemini AI to analyze video content and identify important segments.</p>
         </div>
       </div>
     </div>

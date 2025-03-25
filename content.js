@@ -1,4 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Received message in content script:', request.type);
+  
   if (request.type === 'updateAudioSettings') {
     const settings = request.settings;
     const video = document.querySelector('video');
@@ -24,8 +26,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Additional processing for noise reduction and equalization would go here
     }
   } else if (request.type === 'extractSubtitles') {
+    console.log('Extracting subtitles...');
     extractYouTubeSubtitles()
       .then(subtitles => {
+        console.log('Extracted subtitles:', subtitles.length);
         sendResponse({ success: true, subtitles });
       })
       .catch(error => {
@@ -39,7 +43,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (notesButton) {
       notesButton.style.display = request.available ? 'inline-flex' : 'none';
     }
+  } else if (request.type === 'updateFocusMode') {
+    console.log('Updating Focus Mode settings:', request.focusData);
+    updateFocusMode(request.focusData);
+    sendResponse({ success: true });
   }
+  return true; // Required for asynchronous response
 });
 
 // Audio context and nodes (make them persistent across the session)
@@ -47,6 +56,16 @@ let audioContext = null;
 let source = null;
 let gainNode = null;
 let noiseReductionChain = null;
+
+// Focus mode variables
+let focusMode = {
+  enabled: false,
+  sensitivity: 3,
+  segments: [],
+  currentSegment: null,
+  timeUpdateListener: null,
+  focusButton: null
+};
 
 // Function to add buttons to the YouTube player
 function addControls() {
@@ -96,6 +115,30 @@ function addControls() {
     notesButton.style.cssText = commonStyles;
     notesButton.style.display = 'none'; // Hidden by default until API key is available
 
+    // Create Focus button and add it directly here as well
+    const focusButton = document.createElement('button');
+    focusButton.className = 'ytp-button focus-mode-button custom-audio-button';
+    focusButton.innerHTML = 'Focus';
+    focusButton.title = 'Toggle Focus Mode (skip less important parts)';
+    focusButton.style.cssText = commonStyles;
+
+    // Add click event for Focus button
+    focusButton.addEventListener('click', () => {
+        console.log('Focus button clicked');
+        focusMode.enabled = !focusMode.enabled;
+        focusButton.classList.toggle('button-active', focusMode.enabled);
+        
+        // Save the setting
+        chrome.storage.sync.set({ focusEnabled: focusMode.enabled });
+        
+        // Update the focus mode
+        updateFocusMode({
+            enabled: focusMode.enabled,
+            sensitivity: focusMode.sensitivity,
+            segments: focusMode.segments
+        });
+    });
+
     // Insert buttons after volume control - use a more careful insertion method
     // Use a wrapper to isolate our buttons from affecting the layout
     const buttonWrapper = document.createElement('div');
@@ -103,6 +146,13 @@ function addControls() {
     buttonWrapper.style.cssText = 'display: inline-flex; height: 100%; align-items: center;';
     buttonWrapper.appendChild(soundButton);
     buttonWrapper.appendChild(notesButton);
+    buttonWrapper.appendChild(focusButton); // Add the focus button to the wrapper
+    
+    // Store reference to the focus button
+    focusMode.focusButton = focusButton;
+    
+    // Apply initial state to the focus button
+    focusButton.classList.toggle('button-active', focusMode.enabled);
     
     // Insert after volume area
     volumeArea.insertAdjacentElement('afterend', buttonWrapper);
@@ -129,6 +179,9 @@ function addControls() {
             notesButton.style.display = 'inline-flex';
         }
     });
+    
+    // Add CSS for the focus mode button and indicators
+    addFocusModeCss();
 }
 
 // Function to toggle Audio Boost (formerly 2X sound boost)
@@ -266,12 +319,17 @@ function cleanupControls() {
     });
 }
 
-// Initialize controls only when video player is ready, using a more careful approach
+// Initialize controls only when video player is ready
 function initializeControls() {
-    const videoPlayer = document.querySelector('.html5-video-player');
-    if (videoPlayer && !document.querySelector('.custom-buttons-wrapper')) {
-        addControls();
+  const videoPlayer = document.querySelector('.html5-video-player');
+  if (videoPlayer && !document.querySelector('.custom-buttons-wrapper')) {
+    addControls();
+    
+    // Check if we need to add Focus button 
+    if (focusMode.enabled && !focusMode.focusButton) {
+      addFocusButton();
     }
+  }
 }
 
 // More careful cleanup of old observers
@@ -473,5 +531,396 @@ async function fetchCaptionsFromAPI(videoId) {
   } catch (error) {
     console.error('Error fetching captions from API:', error);
     throw new Error('Failed to fetch captions');
+  }
+}
+
+// Function to handle time updates and skip unimportant parts
+function handleTimeUpdate() {
+  const video = document.querySelector('video');
+  if (!video || !focusMode.enabled) return;
+  
+  // Skip if no segments (avoid unnecessary processing)
+  if (!focusMode.segments || focusMode.segments.length === 0) {
+    console.log('No segments available for Focus Mode, skipping time update handler');
+    return;
+  }
+  
+  const currentTime = video.currentTime;
+  
+  // Only log occasionally to avoid console spam
+  if (Math.round(currentTime * 10) % 50 === 0) { // Log roughly every 5 seconds
+    console.log(`Current time: ${currentTime}, Segments: ${focusMode.segments.length}`);
+  }
+  
+  // Find current segment
+  const currentSegment = focusMode.segments.find(segment => 
+    currentTime >= segment.start && currentTime < segment.end
+  );
+  
+  // Skip if we couldn't find a segment
+  if (!currentSegment) {
+    console.log(`No segment found for current time: ${currentTime}`);
+    return;
+  }
+  
+  // Skip debug log unless it's a transition or we're logging occasionally
+  if (!focusMode.currentSegment || 
+      focusMode.currentSegment.important !== currentSegment.important ||
+      Math.round(currentTime * 10) % 50 === 0) {
+    console.log(`Current segment: ${currentSegment.start.toFixed(1)}-${currentSegment.end.toFixed(1)}, Important: ${currentSegment.important}`);
+  }
+  
+  // Keep track of current segment to detect transitions
+  focusMode.currentSegment = currentSegment;
+  
+  // If we're in a segment and it's not important, skip to the next important segment
+  if (!currentSegment.important) {
+    // Find the next important segment
+    const nextImportantSegment = focusMode.segments.find(segment => 
+      segment.start > currentTime && segment.important
+    );
+    
+    if (nextImportantSegment) {
+      console.log(`Skipping to next important segment: ${nextImportantSegment.start.toFixed(1)}-${nextImportantSegment.end.toFixed(1)}`);
+      
+      // Skip to the next important segment
+      video.currentTime = nextImportantSegment.start;
+      
+      // Show skip notification
+      showSkipNotification(currentSegment, nextImportantSegment);
+    } else {
+      console.log('No next important segment found to skip to');
+    }
+  }
+  
+  // Update focus indicator on the progress bar
+  if (Math.round(currentTime * 10) % 50 === 0) { // Update occasionally
+    updateFocusIndicator(currentTime);
+  }
+}
+
+// Function to show a notification when skipping
+function showSkipNotification(skippedSegment, targetSegment) {
+  // Remove any existing notification
+  const existingNotification = document.querySelector('.focus-mode-notification');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = 'focus-mode-notification';
+  
+  // Calculate time skipped
+  const timeSkipped = Math.round(targetSegment.start - skippedSegment.start);
+  
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span class="notification-icon">⏭️</span>
+      <span class="notification-text">Skipped ${timeSkipped} seconds: ${skippedSegment.reason || 'Less important content'}</span>
+    </div>
+  `;
+  
+  // Add to the player
+  const player = document.querySelector('.html5-video-player');
+  if (player) {
+    player.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.add('fade-out');
+      setTimeout(() => notification.remove(), 500);
+    }, 3000);
+  }
+}
+
+// Function to update the focus indicator on the progress bar
+function updateFocusIndicator(currentTime) {
+  // Get the progress bar
+  const progressBar = document.querySelector('.ytp-progress-bar');
+  if (!progressBar) return;
+  
+  // Remove any existing indicators
+  const existingIndicators = document.querySelectorAll('.focus-segment-indicator');
+  existingIndicators.forEach(indicator => indicator.remove());
+  
+  // Get video duration
+  const video = document.querySelector('video');
+  if (!video) return;
+  const duration = video.duration;
+  
+  // Add segment indicators to the progress bar
+  focusMode.segments.forEach(segment => {
+    const indicator = document.createElement('div');
+    indicator.className = `focus-segment-indicator ${segment.important ? 'important' : 'skippable'}`;
+    
+    // Calculate position and width
+    const startPercent = (segment.start / duration) * 100;
+    const widthPercent = ((segment.end - segment.start) / duration) * 100;
+    
+    indicator.style.left = `${startPercent}%`;
+    indicator.style.width = `${widthPercent}%`;
+    
+    progressBar.appendChild(indicator);
+  });
+}
+
+// Function to add Focus button to YouTube controls
+function addFocusButton() {
+    // If we already added the button through addControls(), just return
+    if (focusMode.focusButton) return;
+    
+    console.log('Adding standalone Focus button to YouTube controls');
+    
+    // Get the right controls container
+    const rightControls = document.querySelector('.ytp-right-controls');
+    if (!rightControls) {
+        console.error('Could not find YouTube right controls for Focus button');
+        return;
+    }
+    
+    // Create the button
+    const focusButton = document.createElement('button');
+    focusButton.className = 'ytp-button focus-mode-button custom-audio-button';
+    focusButton.innerHTML = 'Focus';
+    focusButton.title = 'Toggle Focus Mode (skip less important parts)';
+    
+    // Add click event
+    focusButton.addEventListener('click', () => {
+        console.log('Focus button clicked (standalone)');
+        // Toggle focus mode
+        focusMode.enabled = !focusMode.enabled;
+        
+        // Update the button class
+        focusButton.classList.toggle('button-active', focusMode.enabled);
+        
+        // Save the setting
+        chrome.storage.sync.set({ focusEnabled: focusMode.enabled });
+        
+        // Update the focus mode
+        updateFocusMode({
+            enabled: focusMode.enabled,
+            sensitivity: focusMode.sensitivity,
+            segments: focusMode.segments
+        });
+    });
+    
+    // Add to controls
+    rightControls.insertBefore(focusButton, rightControls.firstChild);
+    
+    // Store reference
+    focusMode.focusButton = focusButton;
+    
+    // Apply initial state
+    focusButton.classList.toggle('button-active', focusMode.enabled);
+    
+    // Add CSS for the focus mode button and indicators
+    addFocusModeCss();
+}
+
+// Add CSS for Focus Mode elements
+function addFocusModeCss() {
+  // Check if the style element already exists
+  if (document.getElementById('focus-mode-css')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'focus-mode-css';
+  style.textContent = `
+    .focus-mode-button {
+      opacity: 0.9;
+      font-weight: bold;
+      font-size: 13px;
+      color: #999;
+      margin-right: 8px;
+    }
+    
+    .focus-mode-button.button-active {
+      color: #fff;
+    }
+    
+    .focus-segment-indicator {
+      position: absolute;
+      height: 100%;
+      bottom: 0;
+      z-index: 25;
+      pointer-events: none;
+    }
+    
+    .focus-segment-indicator.important {
+      background-color: rgba(26, 115, 232, 0.5);
+    }
+    
+    .focus-segment-indicator.skippable {
+      background-color: rgba(218, 220, 224, 0.3);
+    }
+    
+    .focus-mode-notification {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 4px;
+      z-index: 1000;
+      animation: fade-in 0.3s ease-in-out;
+    }
+    
+    .focus-mode-notification.fade-out {
+      animation: fade-out 0.5s ease-in-out;
+    }
+    
+    .notification-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .notification-icon {
+      font-size: 16px;
+    }
+    
+    .notification-text {
+      font-size: 14px;
+    }
+    
+    @keyframes fade-in {
+      from { opacity: 0; transform: translate(-50%, -10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    @keyframes fade-out {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  `;
+  
+  document.head.appendChild(style);
+}
+
+// Function to update focus mode settings
+function updateFocusMode(focusData) {
+  console.log('Updating Focus Mode with data:', focusData);
+  const video = document.querySelector('video');
+  if (!video) {
+    console.error('No video element found for Focus Mode');
+    return;
+  }
+  
+  // Update settings
+  focusMode.enabled = focusData.enabled;
+  focusMode.sensitivity = focusData.sensitivity;
+  
+  // Update segments if provided and fix segment data if needed
+  if (focusData.segments && focusData.segments.length > 0) {
+    console.log(`Setting ${focusData.segments.length} segments for Focus Mode`);
+    
+    // Ensure all segments have proper data types (convert strings to numbers if needed)
+    focusMode.segments = focusData.segments.map(segment => ({
+      start: Number(segment.start),
+      end: Number(segment.end),
+      important: Boolean(segment.important),
+      reason: segment.reason || ''
+    }));
+    
+    // Sort segments by start time to ensure proper order
+    focusMode.segments.sort((a, b) => a.start - b.start);
+    
+    console.log('First few processed segments:', focusMode.segments.slice(0, 3));
+  } else {
+    console.log('No segments provided or empty segments array');
+    focusMode.segments = [];
+  }
+  
+  // Update focus button state if it exists
+  if (focusMode.focusButton) {
+    focusMode.focusButton.classList.toggle('button-active', focusMode.enabled);
+    console.log('Updated focus button state:', focusMode.enabled);
+  } else {
+    console.log('Focus button not found, adding it now');
+    addFocusButton();
+  }
+  
+  // Add or remove the time update listener based on enabled state
+  if (focusMode.enabled) {
+    console.log('Focus Mode enabled, adding time update listener');
+    
+    // Remove existing listener first to prevent duplicates
+    if (focusMode.timeUpdateListener) {
+      console.log('Removing existing time update listener');
+      video.removeEventListener('timeupdate', focusMode.timeUpdateListener);
+    }
+    
+    // Add the listener
+    focusMode.timeUpdateListener = handleTimeUpdate.bind(this);
+    video.addEventListener('timeupdate', focusMode.timeUpdateListener);
+    console.log('Added new time update listener');
+    
+    // Add visual indicators immediately
+    updateFocusIndicator(video.currentTime);
+    
+    // Show notification that Focus Mode is active
+    showFocusModeNotification(true);
+  } else {
+    console.log('Focus Mode disabled, removing time update listener');
+    
+    // Remove time update listener if it exists
+    if (focusMode.timeUpdateListener) {
+      video.removeEventListener('timeupdate', focusMode.timeUpdateListener);
+      focusMode.timeUpdateListener = null;
+      console.log('Removed time update listener');
+    }
+    
+    // Remove visual indicators
+    const existingIndicators = document.querySelectorAll('.focus-segment-indicator');
+    existingIndicators.forEach(indicator => indicator.remove());
+    console.log('Removed visual indicators');
+    
+    // Show notification that Focus Mode is disabled
+    showFocusModeNotification(false);
+  }
+  
+  return true; // Indicate success
+}
+
+// Function to show a notification for focus mode toggle
+function showFocusModeNotification(enabled) {
+  // Remove any existing notification
+  const existingNotification = document.querySelector('.focus-mode-notification');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = 'focus-mode-notification';
+  
+  if (enabled) {
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-icon">🔍</span>
+        <span class="notification-text">Focus Mode Activated - Skipping less important parts</span>
+      </div>
+    `;
+  } else {
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-icon">🔍</span>
+        <span class="notification-text">Focus Mode Deactivated</span>
+      </div>
+    `;
+  }
+  
+  // Add to the player
+  const player = document.querySelector('.html5-video-player');
+  if (player) {
+    player.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.add('fade-out');
+      setTimeout(() => notification.remove(), 500);
+    }, 3000);
   }
 } 
